@@ -54,6 +54,14 @@ tolerations:
 nodeSelector: {}
 affinity: {}
 
+# Node Selector Terms (Simplifies specifying required node affinity)
+nodeSelectorTerms: []
+# - matchExpressions:
+#   - key: "nvidia.com/gpu.product"
+#     operator: In
+#     values:
+#     - "A100"
+
 # Allow passing additional arguments or environment variables to the vLLM container
 extraArgs: []
 extraEnv: []
@@ -64,4 +72,4 @@ extraEnv: []
 # WARNING: This bypasses Kubernetes GPU scheduling. The 'nvidia.com/gpu'
 # resource request will be removed, and Kubernetes will be unaware of the
 # pod's GPU usage. Leave empty ("") to use standard Kubernetes scheduling.
-nvidiaVisibleDevices: ""
+nvidiaVisibleDevices: "7"
