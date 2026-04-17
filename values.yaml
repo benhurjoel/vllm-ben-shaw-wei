@@ -7,7 +7,7 @@ image:
 
 model:
   # The exact Hugging Face model ID.
-  id: "deepseek-ocr"
+  id: "deepseek-ai/DeepSeek-OCR"
   # Most DeepSeek models require trusting remote code
   trustRemoteCode: true
   # Add your Hugging Face token here if using a gated model
