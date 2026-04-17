@@ -6,8 +6,10 @@ image:
   pullPolicy: IfNotPresent
 
 model:
-  # The exact Hugging Face model ID.
-  id: "deepseek-ai/DeepSeek-OCR"
+  # The exact Hugging Face model ID. 
+  # NOTE: "deepseek-ai/DeepSeek-OCR" does not exist. DeepSeek's Vision-Language 
+  # model capable of OCR is typically deepseek-vl-7b-base or deepseek-vl2-tiny.
+  id: "deepseek-ai/deepseek-vl-7b-base"
   # Most DeepSeek models require trusting remote code
   trustRemoteCode: true
   # Add your Hugging Face token here if using a gated model
