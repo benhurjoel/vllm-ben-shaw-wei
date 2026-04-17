@@ -1,0 +1,59 @@
+replicaCount: 1
+
+image:
+  repository: vllm/vllm-openai
+  tag: latest
+  pullPolicy: IfNotPresent
+
+model:
+  # The exact Hugging Face model ID.
+  id: "deepseek-ocr"
+  # Most DeepSeek models require trusting remote code
+  trustRemoteCode: true
+  # Add your Hugging Face token here if using a gated model
+  hfToken: ""
+  # Optional: Limit the max sequence length if you run into GPU memory constraints
+  maxModelLen: 4096
+  # Allocate only 40% of the GPU memory
+  gpuMemoryUtilization: 0.4
+
+resources:
+  limits:
+    nvidia.com/gpu: 1
+    cpu: "8"
+    memory: "24Gi"
+  requests:
+    nvidia.com/gpu: 1
+    cpu: "4"
+    memory: "12Gi"
+
+persistence:
+  enabled: true
+  size: 50Gi
+  storageClass: "" # Leave empty to use the cluster's default StorageClass
+  mountPath: "/data"
+
+service:
+  type: ClusterIP
+  port: 8000
+  # To expose the port directly to external networks (e.g., for Portkey), 
+  # change type to NodePort or LoadBalancer and optionally uncomment nodePort:
+  # nodePort: 30080
+
+route:
+  enabled: true
+  # Set your OpenShift domain here if you want a custom host, otherwise OCP auto-generates it
+  host: "" 
+
+# Advanced scheduling configurations
+tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Exists"
+    effect: "NoSchedule"
+
+nodeSelector: {}
+affinity: {}
+
+# Allow passing additional arguments or environment variables to the vLLM container
+extraArgs: []
+extraEnv: []

@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "vllm-deepseek.fullname" . }}
+  labels:
+    app: {{ include "vllm-deepseek.name" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "vllm-deepseek.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "vllm-deepseek.name" . }}
+    spec:
+      tolerations:
+        {{- with .Values.tolerations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      nodeSelector:
+        {{- with .Values.nodeSelector }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      affinity:
+        {{- with .Values.affinity }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      containers:
+        - name: vllm
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python3", "-m", "vllm.entrypoints.openai.api_server"]
+          args:
+            - "--model"
+            - "{{ .Values.model.id }}"
+            - "--host"
+            - "0.0.0.0"
+            - "--port"
+            - "8000"
+            {{- if .Values.model.trustRemoteCode }}
+            - "--trust-remote-code"
+            {{- end }}
+            {{- if .Values.model.maxModelLen }}
+            - "--max-model-len"
+            - "{{ .Values.model.maxModelLen }}"
+            {{- end }}
+            {{- if .Values.model.gpuMemoryUtilization }}
+            - "--gpu-memory-utilization"
+            - "{{ .Values.model.gpuMemoryUtilization }}"
+            {{- end }}
+            {{- with .Values.extraArgs }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          env:
+            - name: HF_HOME
+              value: "{{ .Values.persistence.mountPath }}/huggingface"
+            {{- if .Values.model.hfToken }}
+            - name: HUGGING_FACE_HUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "vllm-deepseek.fullname" . }}-hf-token
+                  key: token
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            failureThreshold: 240
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            # vLLM requires a large amount of shared memory for tensor parallel processing
+            - name: dshm
+              mountPath: /dev/shm
+            {{- if .Values.persistence.enabled }}
+            - name: model-cache
+              mountPath: {{ .Values.persistence.mountPath }}
+            {{- end }}
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+        {{- if .Values.persistence.enabled }}
+        - name: model-cache
+          persistentVolumeClaim:
+            claimName: {{ include "vllm-deepseek.fullname" . }}-cache
+        {{- end }}
