@@ -57,3 +57,11 @@ affinity: {}
 # Allow passing additional arguments or environment variables to the vLLM container
 extraArgs: []
 extraEnv: []
+
+# --- ADVANCED ---
+# Manual GPU Pinning. For single-node environments.
+# Provide a specific GPU index (e.g., "7") to pin the pod to that GPU.
+# WARNING: This bypasses Kubernetes GPU scheduling. The 'nvidia.com/gpu'
+# resource request will be removed, and Kubernetes will be unaware of the
+# pod's GPU usage. Leave empty ("") to use standard Kubernetes scheduling.
+nvidiaVisibleDevices: ""

@@ -65,6 +65,10 @@ spec:
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+            {{- if .Values.nvidiaVisibleDevices }}
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "{{ .Values.nvidiaVisibleDevices }}"
+            {{- end }}
           ports:
             - name: http
               containerPort: 8000
@@ -88,7 +92,14 @@ spec:
             periodSeconds: 5
             failureThreshold: 3
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- if .Values.nvidiaVisibleDevices }}
+            limits:
+              {{- toYaml (omit .Values.resources.limits "nvidia.com/gpu") | nindent 14 }}
+            requests:
+              {{- toYaml (omit .Values.resources.requests "nvidia.com/gpu") | nindent 14 }}
+            {{- else }}
+              {{- toYaml .Values.resources | nindent 12 }}
+            {{- end }}
           volumeMounts:
             # vLLM requires a large amount of shared memory for tensor parallel processing
             - name: dshm
