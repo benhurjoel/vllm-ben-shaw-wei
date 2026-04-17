@@ -83,20 +83,20 @@ spec:
             httpGet:
               path: /health
               port: http
-            failureThreshold: 240
-            periodSeconds: 10
+            failureThreshold: {{ .Values.probes.startup.failureThreshold | default 240 }}
+            periodSeconds: {{ .Values.probes.startup.periodSeconds | default 10 }}
           livenessProbe:
             httpGet:
               path: /health
               port: http
-            periodSeconds: 10
-            failureThreshold: 3
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds | default 10 }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold | default 3 }}
           readinessProbe:
             httpGet:
               path: /health
               port: http
-            periodSeconds: 5
-            failureThreshold: 3
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds | default 5 }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold | default 3 }}
           resources:
             {{- if .Values.nvidiaVisibleDevices }}
             limits:

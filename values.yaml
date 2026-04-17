@@ -45,6 +45,18 @@ route:
   # Set your OpenShift domain here if you want a custom host, otherwise OCP auto-generates it
   host: "" 
 
+# Health Check Probes Configuration
+probes:
+  startup:
+    periodSeconds: 10
+    failureThreshold: 240 # Default allows up to 40 mins for downloading & loading the model
+  liveness:
+    periodSeconds: 10
+    failureThreshold: 3
+  readiness:
+    periodSeconds: 5
+    failureThreshold: 3
+
 # Advanced scheduling configurations
 tolerations:
   - key: "nvidia.com/gpu"
@@ -72,4 +84,4 @@ extraEnv: []
 # WARNING: This bypasses Kubernetes GPU scheduling. The 'nvidia.com/gpu'
 # resource request will be removed, and Kubernetes will be unaware of the
 # pod's GPU usage. Leave empty ("") to use standard Kubernetes scheduling.
-nvidiaVisibleDevices: "7"
+nvidiaVisibleDevices: ""
