@@ -14,6 +14,13 @@ spec:
       labels:
         app: {{ include "vllm-deepseek.name" . }}
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "vllm-deepseek.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       tolerations:
         {{- with .Values.tolerations }}
         {{- toYaml . | nindent 8 }}
@@ -35,6 +42,8 @@ spec:
       containers:
         - name: vllm
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["python3", "-m", "vllm.entrypoints.openai.api_server"]
           args:
@@ -88,20 +97,20 @@ spec:
               protocol: TCP
           startupProbe:
             httpGet:
-              path: /health
-              port: http
+              path: {{ .Values.probes.startup.httpGet.path }}
+              port: {{ .Values.probes.startup.httpGet.port }}
             failureThreshold: {{ .Values.probes.startup.failureThreshold | default 240 }}
             periodSeconds: {{ .Values.probes.startup.periodSeconds | default 10 }}
           livenessProbe:
             httpGet:
-              path: /health
-              port: http
+              path: {{ .Values.probes.liveness.httpGet.path }}
+              port: {{ .Values.probes.liveness.httpGet.port }}
             periodSeconds: {{ .Values.probes.liveness.periodSeconds | default 10 }}
             failureThreshold: {{ .Values.probes.liveness.failureThreshold | default 3 }}
           readinessProbe:
             httpGet:
-              path: /health
-              port: http
+              path: {{ .Values.probes.readiness.httpGet.path }}
+              port: {{ .Values.probes.readiness.httpGet.port }}
             periodSeconds: {{ .Values.probes.readiness.periodSeconds | default 5 }}
             failureThreshold: {{ .Values.probes.readiness.failureThreshold | default 3 }}
           resources:

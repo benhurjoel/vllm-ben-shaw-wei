@@ -1,5 +1,10 @@
 replicaCount: 1
 
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+podAnnotations: {}
+
 image:
   repository: vllm/vllm-openai
   tag: latest
@@ -7,8 +12,6 @@ image:
 
 model:
   # The exact Hugging Face model ID. 
-  # NOTE: "deepseek-ai/DeepSeek-OCR" does not exist. DeepSeek's Vision-Language 
-  # model capable of OCR is typically deepseek-vl-7b-base or deepseek-vl2-tiny.
   id: "deepseek-ai/DeepSeek-OCR"
   # Most DeepSeek models require trusting remote code
   trustRemoteCode: true
@@ -18,6 +21,18 @@ model:
   maxModelLen: 4096
   # Allocate only 40% of the GPU memory
   gpuMemoryUtilization: 0.4
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
 
 resources:
   limits:
@@ -50,14 +65,40 @@ route:
 # Health Check Probes Configuration
 probes:
   startup:
+    httpGet:
+      path: /health
+      port: 8000
     periodSeconds: 10
     failureThreshold: 240 # Default allows up to 40 mins for downloading & loading the model
   liveness:
+    httpGet:
+      path: /health
+      port: 8000
     periodSeconds: 10
     failureThreshold: 3
   readiness:
+    httpGet:
+      path: /health
+      port: 8000
     periodSeconds: 5
     failureThreshold: 3
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
 
 # Advanced scheduling configurations
 tolerations:
@@ -69,12 +110,12 @@ nodeSelector: {}
 affinity: {}
 
 # Node Selector Terms (Simplifies specifying required node affinity)
-nodeSelectorTerms: []
-# - matchExpressions:
-#   - key: "nvidia.com/gpu.product"
-#     operator: In
-#     values:
-#     - "A100"
+nodeSelectorTerms: 
+ - matchExpressions:
+   - key: "nvidia.com/gpu.product"
+     operator: In
+     values:
+     - "NVIDIA-H200"
 
 # Allow passing additional arguments or environment variables to the vLLM container
 extraArgs: []
@@ -86,4 +127,6 @@ extraEnv: []
 # WARNING: This bypasses Kubernetes GPU scheduling. The 'nvidia.com/gpu'
 # resource request will be removed, and Kubernetes will be unaware of the
 # pod's GPU usage. Leave empty ("") to use standard Kubernetes scheduling.
+# To select the first card, use "0". To select the fourth, use "3".
+# For multiple cards (e.g. Tensor Parallel), use "0,1".
 nvidiaVisibleDevices: ""
