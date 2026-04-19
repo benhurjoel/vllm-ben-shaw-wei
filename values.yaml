@@ -13,6 +13,10 @@ image:
 model:
   # The exact Hugging Face model ID. 
   id: "deepseek-ai/DeepSeek-OCR"
+  # The name used in API calls (useful for Portkey/OpenAI compatibility)
+  servedModelName: "deepseek-ocr"
+  # Optional: API Key for authentication ( recommended for Portkey integration)
+  apiKey: ""
   # Most DeepSeek models require trusting remote code
   trustRemoteCode: true
   # Add your Hugging Face token here if using a gated model
