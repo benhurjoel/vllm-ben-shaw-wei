@@ -136,7 +136,8 @@ initContainers:
   # You can override the image used for the init container if needed.
   image: "vllm/vllm-openai:latest"
 
-extraArgs: []
+extraArgs:
+  - "--enforce-eager"
 extraEnv: []
 
 # --- ADVANCED ---
