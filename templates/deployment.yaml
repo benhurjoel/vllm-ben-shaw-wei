@@ -39,6 +39,36 @@ spec:
         {{- with .Values.affinity }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+      {{- if .Values.initContainers.enabled }}
+      initContainers:
+        - name: pre-download-model
+          image: "{{ .Values.initContainers.image }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["huggingface-cli", "download", "{{ .Values.model.id }}"]
+          env:
+            {{- if .Values.model.hfToken }}
+            - name: HUGGING_FACE_HUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "vllm-deepseek.fullname" . }}-hf-token
+                  key: token
+            {{- end }}
+            - name: HF_HOME
+              value: "{{ .Values.persistence.mountPath }}/huggingface"
+            - name: HOME
+              value: "{{ .Values.persistence.mountPath }}"
+            - name: XDG_CACHE_HOME
+              value: "{{ .Values.persistence.mountPath }}/cache"
+            - name: TRITON_CACHE_DIR
+              value: "{{ .Values.persistence.mountPath }}/triton"
+          volumeMounts:
+            - name: model-cache
+              mountPath: {{ .Values.persistence.mountPath }}
+            - name: dshm
+              mountPath: /dev/shm
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+      {{- end }}
       containers:
         - name: vllm
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -76,14 +106,6 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
           env:
-            - name: HF_HOME
-              value: "{{ .Values.persistence.mountPath }}/huggingface"
-            - name: VLLM_CACHE_ROOT
-              value: "{{ .Values.persistence.mountPath }}/vllm/cache"
-            - name: VLLM_CONFIG_ROOT
-              value: "{{ .Values.persistence.mountPath }}/vllm/config"
-            - name: XDG_CACHE_HOME
-              value: "{{ .Values.persistence.mountPath }}/cache"
             {{- if .Values.model.hfToken }}
             - name: HUGGING_FACE_HUB_TOKEN
               valueFrom:
@@ -91,6 +113,16 @@ spec:
                   name: {{ include "vllm-deepseek.fullname" . }}-hf-token
                   key: token
             {{- end }}
+            - name: HF_HOME
+              value: "{{ .Values.persistence.mountPath }}/huggingface"
+            - name: HOME
+              value: "{{ .Values.persistence.mountPath }}"
+            - name: XDG_CACHE_HOME
+              value: "{{ .Values.persistence.mountPath }}/cache"
+            - name: TRITON_CACHE_DIR
+              value: "{{ .Values.persistence.mountPath }}/triton"
+            - name: VLLM_CACHE_ROOT
+              value: "{{ .Values.persistence.mountPath }}/vllm/cache"
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

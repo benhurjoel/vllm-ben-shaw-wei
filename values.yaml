@@ -24,7 +24,7 @@ model:
   # Optional: Limit the max sequence length if you run into GPU memory constraints
   maxModelLen: 4096
   # Allocate only 40% of the GPU memory
-  gpuMemoryUtilization: 0.4
+  gpuMemoryUtilization: 0.8
 
 serviceAccount:
   create: true
@@ -129,37 +129,15 @@ nodeSelectorTerms:
 
 # Allow passing additional arguments or environment variables to the vLLM container
 
-# Init containers to run before the main vLLM container starts.
-# We use this to pre-download the model into the persistent volume, 
-# completely avoiding Startup Probe timeouts and CrashLoopBackOffs!
 initContainers:
-  - name: pre-download-model
-    image: vllm/vllm-openai:latest
-    command: ["huggingface-cli", "download", "deepseek-ai/DeepSeek-OCR"]
-    env:
-      - name: HF_HOME
-        value: /data/huggingface
-      - name: HOME
-        value: /data
-      - name: XDG_CACHE_HOME
-        value: /data/cache
-      - name: HF_TOKEN
-        value: "" # Add your Hugging Face token here if the model requires it
-    volumeMounts:
-      - name: model-cache # NOTE: This MUST match the volume name in your deployment.yaml
-        mountPath: /data
-    securityContext:
-      runAsUser: 1000
-      runAsNonRoot: true
+  # When enabled, an init container will run to pre-download the model before the main
+  # vLLM container starts. This is highly recommended to prevent startup probe timeouts.
+  enabled: true
+  # You can override the image used for the init container if needed.
+  image: "vllm/vllm-openai:latest"
 
 extraArgs: []
-extraEnv: 
-  - name: HF_HOME
-    value: /data/huggingface
-  - name: HOME
-    value: /data
-  - name: TRITON_CACHE_DIR
-    value: /data/triton
+extraEnv: []
 
 # --- ADVANCED ---
 # Manual GPU Pinning. For single-node environments.
