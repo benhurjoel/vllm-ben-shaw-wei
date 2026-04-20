@@ -29,7 +29,7 @@ model:
 serviceAccount:
   create: true
   annotations: {}
-  name: ""
+  name: "vllm-service-account"
 
 podSecurityContext:
   fsGroup: 1000
