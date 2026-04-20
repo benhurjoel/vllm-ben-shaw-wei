@@ -1,0 +1,22 @@
+{{- if and .Values.serviceAccount.create .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "vllm-deepseek.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "vllm-deepseek.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+rules:
+  # Basic permissions to read pods/logs (often useful for debugging in the cluster)
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+  
+  # NOTE: OpenShift SecurityContextConstraints (SCC) permission.
+  # Because values.yaml sets runAsUser: 1000, we must allow the ServiceAccount 
+  # to use the 'nonroot' or 'anyuid' SCC to avoid "Forbidden" admission errors.
+  - apiGroups: ["security.openshift.io"]
+    resources: ["securitycontextconstraints"]
+    resourceNames: ["nonroot", "anyuid"]
+    verbs: ["use"]
+{{- end }}

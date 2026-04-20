@@ -145,5 +145,5 @@ spec:
         {{- if .Values.persistence.enabled }}
         - name: model-cache
           persistentVolumeClaim:
-            claimName: {{ include "vllm-deepseek.fullname" . }}-cache
+            claimName: {{ include "vllm-deepseek.pvcName" . }}
         {{- end }}

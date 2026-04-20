@@ -31,6 +31,10 @@ serviceAccount:
   annotations: {}
   name: "vllm-service-account"
 
+rbac:
+  # Specifies whether RBAC resources (Role, RoleBinding) should be created.
+  create: true
+
 podSecurityContext:
   fsGroup: 1000
 
@@ -52,6 +56,8 @@ persistence:
   enabled: true
   size: 50Gi
   storageClass: "" # Leave empty to use the cluster's default StorageClass
+  # If you want to use an existing PVC, specify its name here.
+  existingClaim: ""
   mountPath: "/data"
 
 service:
@@ -122,8 +128,38 @@ nodeSelectorTerms:
      - "NVIDIA-H200"
 
 # Allow passing additional arguments or environment variables to the vLLM container
+
+# Init containers to run before the main vLLM container starts.
+# We use this to pre-download the model into the persistent volume, 
+# completely avoiding Startup Probe timeouts and CrashLoopBackOffs!
+initContainers:
+  - name: pre-download-model
+    image: vllm/vllm-openai:latest
+    command: ["huggingface-cli", "download", "deepseek-ai/DeepSeek-OCR"]
+    env:
+      - name: HF_HOME
+        value: /data/huggingface
+      - name: HOME
+        value: /data
+      - name: XDG_CACHE_HOME
+        value: /data/cache
+      - name: HF_TOKEN
+        value: "" # Add your Hugging Face token here if the model requires it
+    volumeMounts:
+      - name: model-cache # NOTE: This MUST match the volume name in your deployment.yaml
+        mountPath: /data
+    securityContext:
+      runAsUser: 1000
+      runAsNonRoot: true
+
 extraArgs: []
-extraEnv: []
+extraEnv: 
+  - name: HF_HOME
+    value: /data/huggingface
+  - name: HOME
+    value: /data
+  - name: TRITON_CACHE_DIR
+    value: /data/triton
 
 # --- ADVANCED ---
 # Manual GPU Pinning. For single-node environments.

@@ -16,3 +16,14 @@ Create the name of the service account to use
 {{- $name := default .Chart.Name .Values.nameOverride }}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
 {{- end }}
+
+{{/*
+PVC name
+*/}}
+{{- define "vllm-deepseek.pvcName" -}}
+{{- if .Values.persistence.existingClaim }}
+{{- .Values.persistence.existingClaim -}}
+{{- else -}}
+{{- include "vllm-deepseek.fullname" . }}-cache
+{{- end -}}
+{{- end -}}
